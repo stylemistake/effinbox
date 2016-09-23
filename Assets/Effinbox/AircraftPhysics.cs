@@ -3,7 +3,10 @@ using UnityStandardAssets.CrossPlatformInput;
 
 public class AircraftPhysics: MonoBehaviour {
 
+    [HideInInspector]
     public Vector3 velocity = Vector3.zero;
+
+    [HideInInspector]
     public Vector3 angularVelocity = Vector3.zero;
 
     public float mass = 16000;
@@ -31,7 +34,7 @@ public class AircraftPhysics: MonoBehaviour {
 
     // Use this for initialization
     public void Start() {
-
+        velocity = transform.forward * speedStall * 0.5f;
     }
 
     // Update is called once per frame
@@ -79,9 +82,10 @@ public class AircraftPhysics: MonoBehaviour {
         var rotationVec = new Vector3(
             pitchKnob.value * pitchRate, 0,
             -rollKnob.value * rollRate);
-        var stallQ = Util.RelativeRangeValue(GetSpeed(),
-            speedStall * 0.25f, speedStall);
-        rotationVec *= Mathf.Clamp(stallQ, 0.25f, 1.0f);
+        var stallQ = Util.RelativeRangeValue(GetSpeed(), 0, speedStall);
+        var speedQ = speedNominal / Mathf.Clamp(GetSpeed(), speedStall, speedMax);
+        Debug.Log(stallQ * speedQ);
+        rotationVec *= Mathf.Clamp(stallQ * speedQ, 0.1f, 1.0f);
         transform.Rotate(rotationVec * Time.deltaTime);
     }
 
@@ -135,7 +139,7 @@ public class AircraftPhysics: MonoBehaviour {
         var speedCoef = GetSpeed() / speedNominal;
         var sideDrag = GetSpeed() - Vector3.Dot(transform.forward, velocity);
         var frontDrag = speedCoef * dragNominal;
-        return frontDrag + sideDrag * 0.5f;
+        return frontDrag + sideDrag * 1.0f;
     }
 
     public Vector3 GetHeading() {
