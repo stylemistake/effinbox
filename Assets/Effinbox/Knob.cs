@@ -29,21 +29,20 @@ public class Knob {
     }
 
     public void Apply(float amount) {
-        var maxDelta = this.rate * Time.deltaTime;
-        var target = Mathf.Clamp(amount, this.min, this.max);
-        this.value = Mathf.MoveTowards(this.value, target, maxDelta);
+        var target = Mathf.Clamp(amount, min, max);
+        value = Mathf.MoveTowards(value, target, rate * Time.deltaTime);
     }
 
     public void ApplyMax() {
-        this.Apply(this.max);
+        Apply(max);
     }
 
     public void ApplyMin() {
-        this.Apply(this.min);
+        Apply(min);
     }
 
     public void ApplyNominal() {
-        this.Apply(this.nominal);
+        Apply(nominal);
     }
 
 }

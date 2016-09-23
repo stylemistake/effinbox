@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class Util {
+public static class Util {
 
     public static float RelativeRangeValue(float value, float start, float end) {
         // Normal range

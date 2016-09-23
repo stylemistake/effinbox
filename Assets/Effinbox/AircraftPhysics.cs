@@ -43,126 +43,126 @@ public class AircraftPhysics: MonoBehaviour {
         bool inputBrakes = CrossPlatformInputManager.GetButton("Fire2");
 
         // Apply controls
-        this.ApplyHeadingControl(inputPitch, inputRoll, 0.0f);
-        this.ApplySpeedControl(inputThrottle, inputBrakes);
+        ApplyHeadingControl(inputPitch, inputRoll, 0.0f);
+        ApplySpeedControl(inputThrottle, inputBrakes);
 
         // Update state
-        this.UpdateVelocity();
-        this.UpdateHeading();
+        UpdateVelocity();
+        UpdateHeading();
 
         // Move aircraft
-        this.transform.position += this.velocity * Time.deltaTime;
+        transform.position += velocity * Time.deltaTime;
 
         // Show debug info
-        this.ShowDebugInfo();
+        ShowDebugInfo();
     }
 
     public void ApplySpeedControl(bool accel, bool decel) {
         if (accel) {
-            this.thrustKnob.ApplyMax();
-            this.brakesKnob.ApplyMin();
+            thrustKnob.ApplyMax();
+            brakesKnob.ApplyMin();
             return;
         }
         if (decel) {
-            this.thrustKnob.ApplyMin();
-            this.brakesKnob.ApplyMax();
+            thrustKnob.ApplyMin();
+            brakesKnob.ApplyMax();
             return;
         }
-        this.thrustKnob.ApplyNominal();
-        this.brakesKnob.ApplyNominal();
+        thrustKnob.ApplyNominal();
+        brakesKnob.ApplyNominal();
     }
 
     public void ApplyHeadingControl(float pitch, float roll, float yaw) {
-        this.pitchKnob.Apply(pitch);
-        this.rollKnob.Apply(roll);
-        this.yawKnob.Apply(yaw);
+        pitchKnob.Apply(pitch);
+        rollKnob.Apply(roll);
+        yawKnob.Apply(yaw);
         var rotationVec = new Vector3(
-            this.pitchKnob.value * this.pitchRate, 0,
-            -this.rollKnob.value * this.rollRate);
-        var stallQ = Util.RelativeRangeValue(this.GetSpeed(),
-            this.speedStall * 0.25f, this.speedStall);
+            pitchKnob.value * pitchRate, 0,
+            -rollKnob.value * rollRate);
+        var stallQ = Util.RelativeRangeValue(GetSpeed(),
+            speedStall * 0.25f, speedStall);
         rotationVec *= Mathf.Clamp(stallQ, 0.25f, 1.0f);
-        this.transform.Rotate(rotationVec * Time.deltaTime);
+        transform.Rotate(rotationVec * Time.deltaTime);
     }
 
     public void UpdateVelocity() {
-        var heading = this.GetHeading();
-        var speed = this.GetSpeed();
-        var drag = this.GetDrag();
-        var stallQ = Util.RelativeRangeValue(speed, 0, this.speedStall);
+        var heading = GetHeading();
+        var speed = GetSpeed();
+        var drag = GetDrag();
+        var stallQ = Util.RelativeRangeValue(speed, 0, speedStall);
 
         // Adjust velocity based on current heading and speed
-        this.velocity = Vector3.SlerpUnclamped(this.velocity,
-            heading.normalized * this.velocity.magnitude,
+        velocity = Vector3.SlerpUnclamped(velocity,
+            heading.normalized * velocity.magnitude,
             stallQ * 1.5f * Time.deltaTime);
 
         // Adjust velocity based on current drag
-        this.velocity -= this.velocity.normalized * drag * Time.deltaTime;
-        this.velocity += heading * this.thrustKnob.value * this.thrustPower * Time.deltaTime;
-        this.velocity -= this.velocity * this.brakesKnob.value * this.brakesDrag * Time.deltaTime;
+        velocity -= velocity.normalized * drag * Time.deltaTime;
+        velocity += heading * thrustKnob.value * thrustPower * Time.deltaTime;
+        velocity -= velocity * brakesKnob.value * brakesDrag * Time.deltaTime;
 
         // Gravity + Lift
         var gravity = Vector3.down * 98f;
-        var lift = this.transform.up * 98f * speed / this.speedStall;
+        var lift = transform.up * 98f * speed / speedStall;
         var gravityLift = gravity + lift;
         if (gravityLift.y > 0) {
             gravityLift.y = 0;
         }
-        this.velocity += gravityLift * Time.deltaTime;
+        velocity += gravityLift * Time.deltaTime;
     }
 
     public void UpdateHeading() {
-        var heading = this.GetHeading();
-        var speed = this.GetSpeed();
+        var heading = GetHeading();
+        var speed = GetSpeed();
 
         // Calculate nose fall
         var fallQ = Util.RelativeRangeValue(speed,
-            this.speedStall * 0.75f, 0.25f);
+            speedStall * 0.75f, 0.25f);
         heading = Vector3.RotateTowards(heading, Vector3.down,
             fallQ * 1.0f * Time.deltaTime, 0.0f);
 
         // Calculate damping effect
-        heading += this.velocity.normalized * 1.0f * Time.deltaTime;
+        heading += velocity.normalized * 1.0f * Time.deltaTime;
 
-        this.SetHeading(heading);
+        SetHeading(heading);
     }
 
     public float GetSpeed() {
-        return this.velocity.magnitude;
+        return velocity.magnitude;
     }
 
     public float GetDrag() {
-        var speedCoef = this.GetSpeed() / speedNominal;
-        var sideDrag = this.GetSpeed() - Vector3.Dot(this.transform.forward, this.velocity);
-        var frontDrag = speedCoef * this.dragNominal;
+        var speedCoef = GetSpeed() / speedNominal;
+        var sideDrag = GetSpeed() - Vector3.Dot(transform.forward, velocity);
+        var frontDrag = speedCoef * dragNominal;
         return frontDrag + sideDrag * 0.5f;
     }
 
     public Vector3 GetHeading() {
-        return this.transform.forward;
+        return transform.forward;
     }
 
     public void SetHeading(Vector3 heading) {
-        this.transform.rotation = Quaternion.LookRotation(heading, this.transform.up);
+        transform.rotation = Quaternion.LookRotation(heading, transform.up);
     }
 
     public float GetPitchDegrees() {
-        var pitch = this.transform.rotation.eulerAngles.x;
+        var pitch = transform.rotation.eulerAngles.x;
         return Mathf.PingPong(pitch, 180) * (pitch < 180 ? -1 : 1);
     }
 
     public void OnGUI() {
-        GUI.Label(new Rect(10, 10, 800, 20), "Speed: " + this.GetSpeed());
-        GUI.Label(new Rect(10, 30, 800, 20), "Drag: " + this.GetDrag());
-        GUI.Label(new Rect(10, 50, 800, 20), "Thrust: " + this.thrustKnob.value);
-        GUI.Label(new Rect(10, 70, 800, 20), "Brakes: " + this.brakesKnob.value);
-        GUI.Label(new Rect(10, 90, 800, 20), "Altitude: " + this.transform.position.y);
-        GUI.Label(new Rect(10, 110, 800, 20), "Pitch: " + this.GetPitchDegrees());
+        GUI.Label(new Rect(10, 10, 800, 20), "Speed: " + GetSpeed());
+        GUI.Label(new Rect(10, 30, 800, 20), "Drag: " + GetDrag());
+        GUI.Label(new Rect(10, 50, 800, 20), "Thrust: " + thrustKnob.value);
+        GUI.Label(new Rect(10, 70, 800, 20), "Brakes: " + brakesKnob.value);
+        GUI.Label(new Rect(10, 90, 800, 20), "Altitude: " + transform.position.y);
+        GUI.Label(new Rect(10, 110, 800, 20), "Pitch: " + GetPitchDegrees());
     }
 
     public void ShowDebugInfo() {
-        var cameraTfm = this.GetComponentInChildren<Camera>().transform;
-        Debug.DrawLine(cameraTfm.position + cameraTfm.forward, cameraTfm.position + this.velocity);
+        var cameraTfm = GetComponentInChildren<Camera>().transform;
+        Debug.DrawLine(cameraTfm.position + cameraTfm.forward, cameraTfm.position + velocity);
     }
 
 }
