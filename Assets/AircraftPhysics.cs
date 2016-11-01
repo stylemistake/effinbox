@@ -3,11 +3,18 @@ using UnityStandardAssets.CrossPlatformInput;
 
 public class AircraftPhysics: MonoBehaviour {
 
-    [HideInInspector]
-    public Vector3 velocity = Vector3.zero;
+    private Rigidbody rigidbody;
 
-    [HideInInspector]
-    public Vector3 angularVelocity = Vector3.zero;
+    public Vector3 velocity {
+        get {
+            return rigidbody == null
+                ? Vector3.zero
+                : rigidbody.velocity;
+        }
+        set {
+            rigidbody.velocity = value;
+        }
+    }
 
     public float mass = 16000;
 
@@ -34,11 +41,17 @@ public class AircraftPhysics: MonoBehaviour {
 
     // Use this for initialization
     public void Start() {
+        rigidbody = GetComponent<Rigidbody>();
         velocity = transform.forward * speedStall * 0.5f;
     }
 
+    public void LateUpdate() {
+        // Show debug info
+        ShowDebugInfo();
+    }
+
     // Update is called once per frame
-    public void Update() {
+    public void FixedUpdate() {
         // Read input for the pitch, yaw, roll and throttle of the aeroplane.
         float inputRoll = CrossPlatformInputManager.GetAxis("Horizontal");
         float inputPitch = CrossPlatformInputManager.GetAxis("Vertical");
@@ -51,13 +64,7 @@ public class AircraftPhysics: MonoBehaviour {
 
         // Update state
         UpdateVelocity();
-        UpdateHeading();
-
-        // Move aircraft
-        transform.position += velocity * Time.deltaTime;
-
-        // Show debug info
-        ShowDebugInfo();
+        // UpdateHeading();
     }
 
     public void ApplySpeedControl(bool accel, bool decel) {
@@ -84,9 +91,10 @@ public class AircraftPhysics: MonoBehaviour {
             -rollKnob.value * rollRate);
         var stallQ = Util.RelativeRangeValue(GetSpeed(), 0, speedStall);
         var speedQ = speedNominal / Mathf.Clamp(GetSpeed(), speedStall, speedMax);
-        Debug.Log(stallQ * speedQ);
         rotationVec *= Mathf.Clamp(stallQ * speedQ, 0.1f, 1.0f);
-        transform.Rotate(rotationVec * Time.deltaTime);
+        var rotation = Quaternion.Euler(rotationVec.x, rotationVec.y, rotationVec.z);
+        Debug.Log(rotation);
+        rigidbody.rotation = rigidbody.rotation;
     }
 
     public void UpdateVelocity() {
@@ -147,7 +155,7 @@ public class AircraftPhysics: MonoBehaviour {
     }
 
     public void SetHeading(Vector3 heading) {
-        transform.rotation = Quaternion.LookRotation(heading, transform.up);
+        rigidbody.MoveRotation(Quaternion.LookRotation(heading, transform.up));
     }
 
     public float GetPitchDegrees() {
@@ -165,7 +173,7 @@ public class AircraftPhysics: MonoBehaviour {
     }
 
     public void ShowDebugInfo() {
-        var cameraTfm = GetComponentInChildren<Camera>().transform;
+        var cameraTfm = GameObject.Find("FirstPersonCamera").GetComponent<Camera>().transform;
         Debug.DrawLine(cameraTfm.position + cameraTfm.forward, cameraTfm.position + velocity);
     }
 
