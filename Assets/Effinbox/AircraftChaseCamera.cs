@@ -16,8 +16,7 @@ public class AircraftChaseCamera : MonoBehaviour {
 		var targetPos = target.transform.position;
 		var targetVel = target.velocity;
 		var targetTfm = target.transform;
-		// var cameraOffset = - targetVel.normalized * 5 - targetTfm.forward * 15;
-		var cameraOffset = - targetVel.normalized * 2 - targetTfm.forward * 23;
+		var cameraOffset = - targetVel.normalized * 5 - targetTfm.forward * 20;
         camera.position = targetPos + cameraOffset;
 		camera.rotation = Quaternion.LookRotation(targetTfm.forward, targetTfm.up);
 		transform.Translate(Vector3.up * 8);

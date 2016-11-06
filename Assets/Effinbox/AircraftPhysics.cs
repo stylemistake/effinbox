@@ -16,8 +16,6 @@ public class AircraftPhysics: MonoBehaviour {
         }
     }
 
-    public float mass = 16000;
-
     public float dragNominal = 90;
 
     public float speedNominal = 1000;
@@ -64,7 +62,7 @@ public class AircraftPhysics: MonoBehaviour {
 
         // Update state
         UpdateVelocity();
-        // UpdateHeading();
+        UpdateHeading();
     }
 
     public void ApplySpeedControl(bool accel, bool decel) {
@@ -89,12 +87,13 @@ public class AircraftPhysics: MonoBehaviour {
         var rotationVec = new Vector3(
             pitchKnob.value * pitchRate, 0,
             -rollKnob.value * rollRate);
-        var stallQ = Util.RelativeRangeValue(GetSpeed(), 0, speedStall);
-        var speedQ = speedNominal / Mathf.Clamp(GetSpeed(), speedStall, speedMax);
-        rotationVec *= Mathf.Clamp(stallQ * speedQ, 0.1f, 1.0f);
-        var rotation = Quaternion.Euler(rotationVec.x, rotationVec.y, rotationVec.z);
-        Debug.Log(rotation);
-        rigidbody.rotation = rigidbody.rotation;
+        var stallQ = Mathf.Pow(
+            Util.RelativeRangeValue(GetSpeed(), 0, speedStall),
+            2f);
+        var speedQ = speedNominal / Mathf.Clamp(GetSpeed(), speedNominal, speedMax);
+        rotationVec *= stallQ;
+        rotationVec.x *= speedQ;
+        transform.Rotate(rotationVec * Time.deltaTime);
     }
 
     public void UpdateVelocity() {
@@ -114,13 +113,16 @@ public class AircraftPhysics: MonoBehaviour {
         velocity -= velocity * brakesKnob.value * brakesDrag * Time.deltaTime;
 
         // Gravity + Lift
-        var gravity = Vector3.down * 98f;
-        var lift = transform.up * 98f * speed / speedStall;
+        var gravity = Vector3.down * 9.8f;
+        var lift = transform.up * 9.8f * speed / speedStall;
         var gravityLift = gravity + lift;
         if (gravityLift.y > 0) {
             gravityLift.y = 0;
         }
         velocity += gravityLift * Time.deltaTime;
+
+        // Add dampening forces according to speed
+        rigidbody.angularDrag = speed / 100;
     }
 
     public void UpdateHeading() {
@@ -164,7 +166,7 @@ public class AircraftPhysics: MonoBehaviour {
     }
 
     public void OnGUI() {
-        GUI.Label(new Rect(10, 10, 800, 20), "Speed: " + GetSpeed());
+        GUI.Label(new Rect(10, 10, 800, 20), "Speed: " + Util.Kph(GetSpeed()));
         GUI.Label(new Rect(10, 30, 800, 20), "Drag: " + GetDrag());
         GUI.Label(new Rect(10, 50, 800, 20), "Thrust: " + thrustKnob.value);
         GUI.Label(new Rect(10, 70, 800, 20), "Brakes: " + brakesKnob.value);
