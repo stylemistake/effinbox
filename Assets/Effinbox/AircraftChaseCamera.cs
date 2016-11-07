@@ -14,9 +14,9 @@ public class AircraftChaseCamera : MonoBehaviour {
     // Update is called once per frame
     public void LateUpdate() {
 		var targetPos = target.transform.position;
-		var targetVel = target.velocity;
+		var targetVel = target.GetComponent<Rigidbody>().velocity;
 		var targetTfm = target.transform;
-		var cameraOffset = - targetVel.normalized * 5 - targetTfm.forward * 20;
+		var cameraOffset = - targetVel.normalized * 0 - targetTfm.forward * 25;
         camera.position = targetPos + cameraOffset;
 		camera.rotation = Quaternion.LookRotation(targetTfm.forward, targetTfm.up);
 		transform.Translate(Vector3.up * 8);

@@ -1,20 +1,17 @@
 ﻿using UnityEngine;
-using UnityStandardAssets.CrossPlatformInput;
 
 public class AircraftPhysics: MonoBehaviour {
 
-    private Rigidbody rigidbody;
-
-    public Vector3 velocity {
-        get {
-            return rigidbody == null
-                ? Vector3.zero
-                : rigidbody.velocity;
-        }
-        set {
-            rigidbody.velocity = value;
-        }
-    }
+    // public Vector3 velocity {
+    //     get {
+    //         return rigidbody == null
+    //             ? Vector3.zero
+    //             : rigidbody.velocity;
+    //     }
+    //     set {
+    //         rigidbody.velocity = value;
+    //     }
+    // }
 
     public float dragNominal = 90;
 
@@ -22,25 +19,27 @@ public class AircraftPhysics: MonoBehaviour {
     public float speedMax = 2000;
     public float speedStall = 500;
 
-    public Knob rollKnob = Knob.CreateBipolar(4.0f);
+    private Knob rollKnob = Knob.CreateBipolar(2.0f);
     public float rollRate = 120;
 
-    public Knob pitchKnob = Knob.CreateBipolar(4.0f);
+    private Knob pitchKnob = Knob.CreateBipolar(2.0f);
     public float pitchRate = 60;
 
-    public Knob yawKnob = Knob.CreateBipolar(4.0f);
+    private Knob yawKnob = Knob.CreateBipolar(2.0f);
     public float yawRate = 30;
 
-    public Knob thrustKnob = new Knob(0.6f, 0.25f, 0.2f, 1.0f);
+    private Knob thrustKnob = new Knob(0.4f, 0.0f, 1.0f, 0.25f);
     public float thrustPower = 180;
 
-    public Knob brakesKnob = new Knob(0.0f, 1.5f, 0.0f, 1.0f);
+    private Knob brakesKnob = new Knob(0.0f, 0.0f, 1.0f, 1.5f);
     public float brakesDrag = 0.1f;
+
+    private new Rigidbody rigidbody;
 
     // Use this for initialization
     public void Start() {
         rigidbody = GetComponent<Rigidbody>();
-        velocity = transform.forward * speedStall * 0.5f;
+        rigidbody.velocity = transform.forward * speedStall;
     }
 
     public void LateUpdate() {
@@ -50,28 +49,19 @@ public class AircraftPhysics: MonoBehaviour {
 
     // Update is called once per frame
     public void FixedUpdate() {
-        // Read input for the pitch, yaw, roll and throttle of the aeroplane.
-        float inputRoll = CrossPlatformInputManager.GetAxis("Horizontal");
-        float inputPitch = CrossPlatformInputManager.GetAxis("Vertical");
-        bool inputThrottle = CrossPlatformInputManager.GetButton("Fire1");
-        bool inputBrakes = CrossPlatformInputManager.GetButton("Fire2");
-
-        // Apply controls
-        ApplyHeadingControl(inputPitch, inputRoll, 0.0f);
-        ApplySpeedControl(inputThrottle, inputBrakes);
-
         // Update state
-        UpdateVelocity();
-        UpdateHeading();
+        UpdateMovement();
+        // UpdateVelocity();
+        // UpdateHeading();
     }
 
-    public void ApplySpeedControl(bool accel, bool decel) {
-        if (accel) {
+    public void ApplySpeedControl(float accel, float decel) {
+        if (accel > 0.1) {
             thrustKnob.ApplyMax();
             brakesKnob.ApplyMin();
             return;
         }
-        if (decel) {
+        if (decel > 0.1) {
             thrustKnob.ApplyMin();
             brakesKnob.ApplyMax();
             return;
@@ -84,80 +74,73 @@ public class AircraftPhysics: MonoBehaviour {
         pitchKnob.Apply(pitch);
         rollKnob.Apply(roll);
         yawKnob.Apply(yaw);
+    }
+
+    public void UpdateMovement() {
+        // Common vars
+        var velocity = rigidbody.velocity;
+        var speed = velocity.magnitude;
+        var speedQ = speed / speedNominal;
+        var speedStallQ = Util.RelativeRangeValue(speed, speedStall * 0.25f, speedStall);
+        var heading = velocity.normalized;
+
+        //  Thrust
+        // ----------------------------------------
+        var turbineEfficiencyQ = 1f + speedQ / 4;
+        var thrust = transform.forward * thrustKnob.value
+            * thrustPower * 1000;
+        rigidbody.AddForce(thrust);
+
+        //  Handling
+        // ----------------------------------------
         var rotationVec = new Vector3(
-            pitchKnob.value * pitchRate, 0,
+            pitchKnob.value * pitchRate,
+            yawKnob.value * yawRate,
             -rollKnob.value * rollRate);
-        var stallQ = Mathf.Pow(
-            Util.RelativeRangeValue(GetSpeed(), 0, speedStall),
-            2f);
-        var speedQ = speedNominal / Mathf.Clamp(GetSpeed(), speedNominal, speedMax);
-        rotationVec *= stallQ;
-        rotationVec.x *= speedQ;
-        transform.Rotate(rotationVec * Time.deltaTime);
-    }
+        // Calculate drag caused by control surfaces
+        var turnDrag = Mathf.Pow(rotationVec.magnitude / 16, 1.2f);
+        rotationVec *= speedStallQ * 0.2f;
+        // rotationVec *= Vector3.Dot(heading, velocity.normalized);
+        rigidbody.AddRelativeTorque(rotationVec, ForceMode.VelocityChange);
 
-    public void UpdateVelocity() {
-        var heading = GetHeading();
-        var speed = GetSpeed();
-        var drag = GetDrag();
-        var stallQ = Util.RelativeRangeValue(speed, 0, speedStall);
+        //  Damping effect
+        // ----------------------------------------
+        var inertiaRotation = Quaternion.Lerp(
+            rigidbody.rotation,
+            Quaternion.LookRotation(heading, transform.up),
+            speedQ * 4f * Time.deltaTime);
+        rigidbody.MoveRotation(inertiaRotation);
 
-        // Adjust velocity based on current heading and speed
-        velocity = Vector3.SlerpUnclamped(velocity,
-            heading.normalized * velocity.magnitude,
-            stallQ * 1.5f * Time.deltaTime);
+        //  Turning effect
+        // ----------------------------------------
+        rigidbody.velocity = Vector3.SlerpUnclamped(
+            rigidbody.velocity,
+            transform.forward * rigidbody.velocity.magnitude,
+            speedStallQ * 2f * Time.deltaTime);
 
-        // Adjust velocity based on current drag
-        velocity -= velocity.normalized * drag * Time.deltaTime;
-        velocity += heading * thrustKnob.value * thrustPower * Time.deltaTime;
-        velocity -= velocity * brakesKnob.value * brakesDrag * Time.deltaTime;
-
-        // Gravity + Lift
-        var gravity = Vector3.down * 9.8f;
-        var lift = transform.up * 9.8f * speed / speedStall;
-        var gravityLift = gravity + lift;
-        if (gravityLift.y > 0) {
-            gravityLift.y = 0;
+        //  Lift
+        // ----------------------------------------
+        var gravity = Physics.gravity;
+        var lift = transform.up * gravity.magnitude * speedStallQ;
+        lift += gravity;
+        if (lift.y > 0) {
+            lift.y = 0;
         }
-        velocity += gravityLift * Time.deltaTime;
+        lift -= gravity;
+        rigidbody.AddForce(lift, ForceMode.Acceleration);
 
-        // Add dampening forces according to speed
-        rigidbody.angularDrag = speed / 100;
-    }
+        //  Drag
+        // ----------------------------------------
+        rigidbody.drag = dragNominal
+            + brakesKnob.value * brakesDrag
+            + turnDrag;
+        rigidbody.angularDrag = 2 * speedQ + 2f;
 
-    public void UpdateHeading() {
-        var heading = GetHeading();
-        var speed = GetSpeed();
-
-        // Calculate nose fall
-        var fallQ = Util.RelativeRangeValue(speed,
-            speedStall * 0.75f, 0.25f);
-        heading = Vector3.RotateTowards(heading, Vector3.down,
-            fallQ * 1.0f * Time.deltaTime, 0.0f);
-
-        // Calculate damping effect
-        heading += velocity.normalized * 1.0f * Time.deltaTime;
-
-        SetHeading(heading);
+        // Debug.Log(turnDrag);
     }
 
     public float GetSpeed() {
-        return velocity.magnitude;
-    }
-
-    public float GetDrag() {
-        var speedCoef = GetSpeed() / speedNominal;
-        var sideDrag = GetSpeed() - Vector3.Dot(transform.forward, velocity);
-        var frontDrag = speedCoef * dragNominal;
-        return frontDrag + sideDrag * 1.0f;
-    }
-
-    public Vector3 GetHeading() {
-        return transform.forward;
-    }
-
-    public void SetHeading(Vector3 heading) {
-        rigidbody.MoveRotation(Quaternion.LookRotation(heading, transform.up));
+        return rigidbody.velocity.magnitude;
     }
 
     public float GetPitchDegrees() {
@@ -167,7 +150,7 @@ public class AircraftPhysics: MonoBehaviour {
 
     public void OnGUI() {
         GUI.Label(new Rect(10, 10, 800, 20), "Speed: " + Util.Kph(GetSpeed()));
-        GUI.Label(new Rect(10, 30, 800, 20), "Drag: " + GetDrag());
+        GUI.Label(new Rect(10, 30, 800, 20), "Drag: " + rigidbody.drag);
         GUI.Label(new Rect(10, 50, 800, 20), "Thrust: " + thrustKnob.value);
         GUI.Label(new Rect(10, 70, 800, 20), "Brakes: " + brakesKnob.value);
         GUI.Label(new Rect(10, 90, 800, 20), "Altitude: " + transform.position.y);
@@ -175,8 +158,12 @@ public class AircraftPhysics: MonoBehaviour {
     }
 
     public void ShowDebugInfo() {
-        var cameraTfm = GameObject.Find("FirstPersonCamera").GetComponent<Camera>().transform;
-        Debug.DrawLine(cameraTfm.position + cameraTfm.forward, cameraTfm.position + velocity);
+        var cameraTfm = GameObject
+            .Find("FirstPersonCamera")
+            .GetComponent<Camera>()
+            .transform;
+        Debug.DrawLine(cameraTfm.position + cameraTfm.forward,
+            cameraTfm.position + rigidbody.velocity);
     }
 
 }

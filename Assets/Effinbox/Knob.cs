@@ -9,10 +9,10 @@ public class Knob {
     public float nominal;
 
     public static Knob CreateBipolar(float rate) {
-        return new Knob(0.0f, rate, -1.0f, 1.0f);
+        return new Knob(0.0f, -1.0f, 1.0f, rate);
     }
 
-    public Knob(float value, float rate, float min, float max) {
+    public Knob(float value, float min, float max, float rate) {
         this.value = value;
         this.rate = rate;
         this.min = min;
@@ -20,7 +20,7 @@ public class Knob {
         this.nominal = value;
     }
 
-    public Knob(float value, float rate, float min, float max, float nominal) {
+    public Knob(float value, float min, float max, float rate, float nominal) {
         this.value = value;
         this.rate = rate;
         this.min = min;

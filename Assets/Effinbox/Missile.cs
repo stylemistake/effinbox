@@ -9,7 +9,8 @@ public class Missile : MonoBehaviour {
     public float range = 2000;
     public GameObject target;
 
-    private Rigidbody rigidbody;
+    private float distanceTravelled = 0;
+    private new Rigidbody rigidbody;
 
 	// Use this for initialization
 	void Start() {
@@ -21,6 +22,12 @@ public class Missile : MonoBehaviour {
 	void FixedUpdate() {
         ApplyHoming();
         ApplyDragRotation();
+
+        // Range limit
+        distanceTravelled += rigidbody.velocity.magnitude * Time.deltaTime;
+        if (distanceTravelled > range) {
+            Destroy(gameObject);
+        }
 	}
 
     void ApplyDragRotation() {
@@ -33,47 +40,37 @@ public class Missile : MonoBehaviour {
         if (target == null) {
             return;
         }
+        var targetRigidbody = target.GetComponent<Rigidbody>();
         var velA = rigidbody.velocity;
-        var velB = target.GetComponent<Rigidbody>().velocity;
+        Vector3 velB = Vector3.zero;
+        if (targetRigidbody != null) {
+            velB = targetRigidbody.velocity;
+        }
         var speedA = speed;
         var speedB = velB.magnitude;
         var posDiff = target.transform.position - transform.position;
         var velQ = (velA.normalized + velB.normalized).magnitude;
-        var posQ = (velA.normalized + posDiff.normalized).magnitude;
+        // var posQ = (velA.normalized + posDiff.normalized).magnitude;
         Color color = Color.red;
         Vector3 targetHeading;
         if (speedA <= speedB || velQ < 0.1) {
             // No collision point
             // Find some middle-ground approach
-            if (velQ > 1.8 && posQ < 0.2) {
-                // Going ahead of the plane
-                // Try with less speed, so collision happens faster
-                color = Color.blue;
-                targetHeading = (posDiff + velB).normalized
-                    * speedA / 4;
-            } else {
-                color = Color.yellow;
-                targetHeading = (posDiff + velB).normalized
-                    * speedA;
-            }
+            color = Color.yellow;
+            targetHeading = (posDiff + velB).normalized
+                * speedA;
         } else {
             // Collision point exists
             // Find exact collision course
             targetHeading = posDiff.normalized
                 * Mathf.Sqrt(speedA * speedA - speedB * speedB)
                 + velB;
-            // Try less speed to turn around faster
-            if (velQ < 1.8 && posQ < 1.4) {
-                color = Color.blue;
-                targetHeading /= 4;
-            }
         }
-        var velDelta = maneuverability * speed / rigidbody.velocity.magnitude;
         rigidbody.velocity = Vector3.RotateTowards(
             rigidbody.velocity,
             targetHeading,
-            Time.deltaTime * velDelta,
-            Time.deltaTime * 800);
+            Time.deltaTime * maneuverability,
+            Time.deltaTime * 1000);
         Debug.DrawLine(rigidbody.worldCenterOfMass,
             rigidbody.worldCenterOfMass + (rigidbody.velocity / 4),
             color);
