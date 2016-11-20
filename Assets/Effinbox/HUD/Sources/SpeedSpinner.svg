@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="256"
+   height="256"
+   viewBox="0 0 256 256"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="SpeedSpinner.svg"
+   inkscape:export-filename="C:\Users\style\Documents\Effinbox\Assets\Effinbox\HUD\SpeedSpinner.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="2.8"
+     inkscape:cx="166.23919"
+     inkscape:cy="141.61147"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     units="px"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-796.36216)">
+    <path
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-opacity:1"
+       d="M 128 0 A 128 128 0 0 0 55.519531 22.666016 L 93.251953 88.019531 A 53.035713 53.035713 0 0 1 128 74.964844 A 53.035713 53.035713 0 0 1 162.76367 87.992188 L 200.54102 22.560547 A 128 128 0 0 0 128 0 z M 162.74805 167.98047 A 53.035713 53.035713 0 0 1 128 181.03516 A 53.035713 53.035713 0 0 1 93.236328 168.00781 L 55.458984 233.43945 A 128 128 0 0 0 128 256 A 128 128 0 0 0 200.48047 233.33398 L 162.74805 167.98047 z "
+       transform="translate(0,796.36216)"
+       id="path4176" />
+    <circle
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-opacity:1"
+       id="path3409"
+       cx="128"
+       cy="924.36218"
+       r="34.821434" />
+  </g>
+</svg>

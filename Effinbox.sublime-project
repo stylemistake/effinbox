@@ -11,6 +11,14 @@
 	"folders":
 	[
 		{
+			"name": "/Assets/Effinbox",
+			"path": "Assets/Effinbox",
+			"file_exclude_patterns":
+			[
+				"*.meta",
+			],
+		},
+		{
 			"name": "/Assets",
 			"path": "Assets",
 			"file_exclude_patterns":
