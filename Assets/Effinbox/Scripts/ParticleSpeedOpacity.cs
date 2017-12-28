@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 
-public class ParticleSpeedOpacity: MonoBehaviour {
+namespace Effinbox {
+
+  public class ParticleSpeedOpacity: MonoBehaviour {
 
     public float minSpeed = 50f;
     public float maxSpeed = 250f;
@@ -10,14 +12,16 @@ public class ParticleSpeedOpacity: MonoBehaviour {
     private Color color = new Color(1f, 1f, 1f, 0f);
 
     public void Start() {
-        particles = GetComponent<ParticleSystem>();
+      particles = GetComponent<ParticleSystem>();
     }
 
     public void LateUpdate() {
-        color.a = Util.RelativeRangeValue(
-            rigidbody.velocity.magnitude,
-            minSpeed, maxSpeed);
-        particles.startColor = color;
+      color.a = Util.RelativeRangeValue(
+        rigidbody.velocity.magnitude,
+        minSpeed, maxSpeed);
+      particles.startColor = color;
     }
+
+  }
 
 }

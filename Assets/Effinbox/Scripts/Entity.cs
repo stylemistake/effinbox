@@ -1,6 +1,8 @@
 using UnityEngine;
 
-public class Entity: MonoBehaviour {
+namespace Effinbox {
+
+  public class Entity: MonoBehaviour {
 
     public string hudAbbr;
     public Faction faction;
@@ -9,5 +11,7 @@ public class Entity: MonoBehaviour {
     public Squadron squadron;
     public bool isTargetable;
     public bool isRadarLockable;
+
+  }
 
 }

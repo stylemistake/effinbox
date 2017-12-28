@@ -1,15 +1,19 @@
 ﻿using UnityEngine;
 
-public class NewBehaviourScript: MonoBehaviour {
+namespace Effinbox {
 
-    // Use this for initialization
-    public void Start() {
+  public class Health: MonoBehaviour {
 
+    [RangeAttribute(0f, 500f)]
+    public float health = 100f;
+
+    public void ApplyDamage(float damage) {
+        if (damage > 0) {
+            health -= damage;
+            Debug.Log("Damage: " + damage.ToString("0"));
+        }
     }
 
-    // Update is called once per frame
-    public void Update() {
-
-    }
+  }
 
 }

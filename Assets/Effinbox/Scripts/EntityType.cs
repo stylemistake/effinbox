@@ -1,4 +1,6 @@
-public enum EntityType {
+namespace Effinbox {
+
+  public enum EntityType {
     Aircraft,
     AircraftFighter,
     AircraftMulti,
@@ -13,4 +15,6 @@ public enum EntityType {
     Hydrofoil,
     Carrier,
     Satellite,
+  }
+
 }

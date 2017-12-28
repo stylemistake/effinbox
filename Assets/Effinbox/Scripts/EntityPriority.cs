@@ -1,6 +1,10 @@
-public enum EntityPriority {
+namespace Effinbox {
+
+  public enum EntityPriority {
     None,
     Primary,
     Secondary,
     Neutral,
+  }
+
 }

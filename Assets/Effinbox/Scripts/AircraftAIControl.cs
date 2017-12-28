@@ -1,167 +1,168 @@
 ﻿using UnityEngine;
 
-public class AircraftAIControl: MonoBehaviour {
+namespace Effinbox {
 
-    enum Maneuver {
-        Rolling,
-        Pitching,
-        Stabilizing,
-        Seeking,
-        None,
-    }
+  [RequireComponent (typeof (AircraftPhysics))]
+  [RequireComponent (typeof (Rigidbody))]
+  public class AircraftAIControl: MonoBehaviour {
 
     public Waypoint initialWaypoint;
     public Entity leader;
-    public float deadzoneAngle = 0.5f;
+    public Entity target;
+
+    [RangeAttribute(0f, 90f)]
+    public float deadzoneAngle = 45f;
+
+    [RangeAttribute(0f, 5f)]
     public float deadzoneSize = 3f;
-    public float minAltitude = 200f;
+
+    [RangeAttribute(0f, 1000f)]
+    public float minAltitude = 100f;
 
     private AircraftPhysics aircraft;
+    private AircraftWeapon aircraftWeapon;
     private new Rigidbody rigidbody;
+    private Radar radar;
     private Waypoint waypoint;
-    private Maneuver maneuver = Maneuver.None;
+    private float lastFiredAt;
 
     public void Start() {
-        aircraft = GetComponent<AircraftPhysics>();
-        rigidbody = GetComponent<Rigidbody>();
-        waypoint = initialWaypoint;
+      aircraft = GetComponent<AircraftPhysics>();
+      aircraftWeapon = GetComponent<AircraftWeapon>();
+      rigidbody = GetComponent<Rigidbody>();
+      radar = GetComponent<Radar>();
+      waypoint = initialWaypoint;
     }
 
     public void FixedUpdate() {
-        if (waypoint) {
-            if (IsPositionReached(waypoint.position)) {
-                waypoint = waypoint.GetNearest();
-            }
-            if (IsPositionReachable(waypoint.position)) {
-                AlignToWaypoint();
-            }
-            else {
-                AlignToHorizon();
-            }
+      if (radar) {
+        radar.SelectNearestEnemy();
+        target = radar.GetSelectedTarget();
+      }
+      if (target) {
+        AlignToSelectedTarget();
+        var nextFireAt = lastFiredAt + 0.25f;
+        if (aircraftWeapon && radar.IsLocked() && nextFireAt < Time.time) {
+          aircraftWeapon.FireWeapon();
+          lastFiredAt = Time.time;
+        }
+      }
+      else if (waypoint) {
+        if (IsPositionReached(waypoint.position)) {
+          waypoint = waypoint.GetNearest();
+        }
+        if (IsPositionReachable(waypoint.position)) {
+          AlignToWaypoint();
         }
         else {
-            AlignToHorizon();
+          AlignToHorizon();
         }
-        if (rigidbody.velocity.magnitude < aircraft.speedStall) {
-            aircraft.ApplySpeedControl(1f, 0f);
-        }
-        if (rigidbody.velocity.magnitude > aircraft.speedNominal) {
-            aircraft.ApplySpeedControl(0f, 0f);
-        }
-        // switch (maneuver) {
-        //     case Maneuver.Rolling:
-        //         Debug.Log("Rolling");
-        //         break;
-        //     case Maneuver.Pitching:
-        //         Debug.Log("Pitching");
-        //         break;
-        //     case Maneuver.Stabilizing:
-        //         Debug.Log("Stabilizing");
-        //         break;
-        //     case Maneuver.Seeking:
-        //         Debug.Log("Seeking");
-        //         break;
-        //     default:
-        //         Debug.Log("Doing nothing");
-        //         break;
-        // }
-    }
-
-    public void AlignToHorizon() {
-        maneuver = Maneuver.Stabilizing;
-        var altitude = GetTerrainAltitude();
-        var horizontal = transform.forward;
-        horizontal.y = altitude < minAltitude ? 0.5f : 0;
-        var rotationAngles = Util.AxisAngles(transform, horizontal, Vector3.up);
-        rotationAngles.x *= -5;
-        rotationAngles.y *= -5;
-        rotationAngles.z *= 2;
-        aircraft.ApplyHeadingControl(rotationAngles);
-    }
-
-    public void AlignToTarget() {
-
+      }
+      else {
+        AlignToHorizon();
+      }
+      if (rigidbody.velocity.magnitude < aircraft.speedStall) {
+        aircraft.ApplySpeedControl(1f, 0f);
+      }
+      if (rigidbody.velocity.magnitude > aircraft.speedNominal) {
+        aircraft.ApplySpeedControl(0f, 0f);
+      }
     }
 
     public float GetTerrainAltitude() {
-        var pos = transform.position;
-        return pos.y - Terrain.activeTerrain.SampleHeight(pos);
+      var pos = transform.position + rigidbody.velocity * deadzoneSize;
+      return pos.y - Terrain.activeTerrain.SampleHeight(pos);
     }
 
     public bool IsPositionReached(Vector3 position) {
-        var distance = Vector3.Distance(transform.position, position);
-        return distance <= rigidbody.velocity.magnitude;
+      var distance = Vector3.Distance(transform.position, position);
+      return distance <= rigidbody.velocity.magnitude;
     }
 
     public bool IsPositionReachable(Vector3 position) {
-        var angle = Mathf.Abs(Vector3.Dot(transform.forward,
-            (position - transform.position).normalized));
-        var minDistance = rigidbody.velocity.magnitude * deadzoneSize;
-        var distance = Vector3.Distance(transform.position, position);
-        if (distance > minDistance) {
-            return true;
-        }
-        if (distance < rigidbody.velocity.magnitude) {
-            return false;
-        }
-        return angle > deadzoneAngle;
+      return !Util.InDeadzoneCone(transform, position, deadzoneAngle,
+        rigidbody.velocity.magnitude * deadzoneSize);
+    }
+
+    public void AlignToHorizon() {
+      var altitude = GetTerrainAltitude();
+      var horizontal = transform.forward;
+      horizontal.y = altitude < minAltitude ? 0.5f : 0;
+      var rotationAngles = Util.AxisAnglesAlt(transform, horizontal, Vector3.up) / 90;
+      rotationAngles.x *= 8f;
+      rotationAngles.y *= 2f;
+      rotationAngles.z *= -1f;
+      aircraft.ApplyHeadingControl(rotationAngles);
+      aircraft.ApplySpeedControl(1f, 0f);
     }
 
     public void AlignToWaypoint() {
-        var localWaypointPos = waypoint.position - transform.position;
-        // Keep a safe altitude
-        var altitude = GetTerrainAltitude();
-        var distance = localWaypointPos.magnitude;
-        if (distance > minAltitude && altitude < minAltitude) {
-            AlignToHorizon();
-            return;
-        }
-        // Continue with alignment
-        var waypointAngles = Util.AxisAngles(transform, localWaypointPos, Vector3.up);
-        var relativeAngles = Util.AxisAngles(transform, localWaypointPos);
-        var roll = waypointAngles.x - waypointAngles.y;
-        if (waypointAngles.y < 0) {
-            roll = - waypointAngles.y - waypointAngles.x;
-        }
-        var rollAbs = Mathf.Abs(roll);
-        if (maneuver == Maneuver.None || maneuver == Maneuver.Stabilizing) {
-            maneuver = Maneuver.Seeking;
-        }
-        if (maneuver != Maneuver.Pitching && rollAbs > 0.2f) {
-            maneuver = Maneuver.Rolling;
-        }
-        if (maneuver == Maneuver.Rolling) {
-            aircraft.ApplyRoll(roll);
-            aircraft.ApplyYaw(0);
-            if (rollAbs < 0.75f) {
-                maneuver = Maneuver.Pitching;
-            }
-        }
-        if (maneuver == Maneuver.Pitching) {
-            aircraft.ApplyPitch(-waypointAngles.x * 5);
-            aircraft.ApplyYaw(0);
-            aircraft.ApplyRoll(roll);
-            aircraft.ApplySpeedControl(1f, 0f);
-            if (Mathf.Abs(relativeAngles.y) < 0.5f && relativeAngles.x < 0.05f) {
-                maneuver = Maneuver.Seeking;
-            }
-        }
-        if (maneuver == Maneuver.Seeking) {
-            var rotationAngles = Util.AxisAngles(transform, localWaypointPos, Vector3.up);
-            rotationAngles.x *= -5;
-            rotationAngles.y *= -10;
-            rotationAngles.z *= 1;
-            aircraft.ApplyHeadingControl(rotationAngles);
-        }
+      AlignToWorldPoint(waypoint.position);
+    }
+
+    public void AlignToSelectedTarget() {
+      AlignToWorldPoint(target.transform.position);
+    }
+
+    public void AlignToWorldPoint(Vector3 position) {
+      var heading = position - transform.position;
+
+      // Keep a safe altitude
+      var altitude = GetTerrainAltitude();
+      var distance = heading.magnitude;
+      if (distance > minAltitude && altitude < minAltitude) {
+        AlignToHorizon();
+        return;
+      }
+
+      // Angles relative to the plane
+      var angles = Util.AxisAnglesAlt(transform, heading, Vector3.up) / 90;
+      // Angles relative to the world
+      var anglesWorld = Util.AxisAnglesAlt(transform.forward, Vector3.up, heading) / 90;
+      // Bank angle
+      var bank = Util.AxisAnglesAlt(transform, transform.forward, Vector3.up).z;
+      // Roll amount to keep plane vertical to pitch towards the target
+      var rollVertical = Mathf.DeltaAngle(bank, anglesWorld.y > 0 ? 85 : -85) / 90;
+
+      // if (Util.InRangeAbs(angles.y, 1f, 2f)) {
+      //   // Away from the target
+      // } else {
+      //   // Towards the target
+      // }
+
+      aircraft.ApplySpeedControl(0.6f, 0f);
+
+      if (Util.InRangeAbs(anglesWorld.y, 0f, 0.15f)) {
+        // Stabilizing
+        var rotationAngles = angles;
+        rotationAngles.x *= 5f;
+        rotationAngles.y *= 10f;
+        rotationAngles.z *= -1f;
+        aircraft.ApplyHeadingControl(rotationAngles);
+      } else {
+        // Pitching
+        aircraft.ApplyRoll(rollVertical - anglesWorld.x * 2f);
+        aircraft.ApplyPitch(angles.x * 5f);
+        aircraft.ApplyYaw(0f);
+      }
     }
 
     public void OnDrawGizmos() {
-        if (waypoint) {
-            Gizmos.color = IsPositionReachable(waypoint.position)
-                ? Color.red
-                : Color.yellow;
-            Gizmos.DrawLine(transform.position, waypoint.position);
-        }
+      Vector3? targetPos = null;
+      if (target) {
+        targetPos = target.transform.position;
+      }
+      else if (waypoint) {
+        targetPos = waypoint.position;
+      }
+      if (targetPos.HasValue) {
+        Gizmos.color = IsPositionReachable(targetPos.Value)
+          ? Color.red
+          : Color.yellow;
+        Gizmos.DrawLine(transform.position, targetPos.Value);
+      }
     }
+
+  }
 
 }

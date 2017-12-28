@@ -1,23 +1,27 @@
 ﻿using UnityEngine;
 
-public class ExplodeOnDestroy: MonoBehaviour {
+namespace Effinbox {
+
+  public class ExplodeOnDestroy: MonoBehaviour {
 
     public GameObject explosionPrototype;
     public bool explosionEnabled;
 
     public void Enable() {
-        explosionEnabled = true;
+      explosionEnabled = true;
     }
 
     public void Disable() {
-        explosionEnabled = false;
+      explosionEnabled = false;
     }
 
     public void OnDestroy() {
-        if (explosionEnabled) {
-            explosionPrototype.transform.position = transform.position;
-            Instantiate(explosionPrototype);
-        }
+      if (explosionEnabled) {
+        explosionPrototype.transform.position = transform.position;
+        Instantiate(explosionPrototype);
+      }
     }
+
+  }
 
 }
