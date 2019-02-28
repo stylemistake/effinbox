@@ -3,7 +3,7 @@
 namespace Effinbox {
 
   [ExecuteInEditMode]
-  public class AircraftChaseCamera : MonoBehaviour {
+  public class AircraftChaseCamera: MonoBehaviour {
 
     public AircraftPhysics target;
     private new Transform camera;

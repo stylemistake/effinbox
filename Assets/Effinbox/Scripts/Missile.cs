@@ -26,7 +26,7 @@ namespace Effinbox {
 
     private float distanceTravelled;
     private new Rigidbody rigidbody;
-    private bool hasCollided;
+    private bool hasExploded;
 
     // Use this for initialization
     private void Start() {
@@ -38,6 +38,12 @@ namespace Effinbox {
     private void FixedUpdate() {
       ApplyHoming();
       ApplyDragRotation();
+
+      // Explode by reaching critical distance
+      var distance = GetDistanceToTarget();
+      if (distance < damageRange * 0.75f) {
+        Explode();
+      }
 
       // Range limit
       distanceTravelled += rigidbody.velocity.magnitude * Time.deltaTime;
@@ -92,8 +98,15 @@ namespace Effinbox {
         color);
     }
 
-    private void OnCollisionEnter() {
-      if (hasCollided) {
+    private float GetDistanceToTarget() {
+      if (!target) {
+        return Mathf.Infinity;
+      }
+      return Vector3.Distance(transform.position, target.transform.position);
+    }
+
+    private void Explode() {
+      if (hasExploded) {
         return;
       }
       var exploder = GetComponent<ExplodeOnDestroy>();
@@ -104,13 +117,17 @@ namespace Effinbox {
       if (target) {
         var health = target.GetComponent<Health>();
         if (health) {
-          var distance = Vector3.Distance(transform.position, target.transform.position);
+          var distance = GetDistanceToTarget();
           var distanceQ = Mathf.Clamp01((damageRange - distance) / damageRange);
           health.ApplyDamage(damage * distanceQ);
         }
       }
-      hasCollided = true;
+      hasExploded = true;
       Destroy(gameObject);
+    }
+
+    private void OnCollisionEnter() {
+      Explode();
     }
 
   }

@@ -43,7 +43,10 @@ namespace Effinbox {
       var nearestDistance = Mathf.Infinity;
       Entity nearest = null;
       foreach (var entity in entities) {
-        var distance = Vector3.Distance(self.transform.position,
+        var direction = Vector3.Normalize(transform.position
+          - entity.transform.position);
+        var cost = Mathf.Clamp01(Vector3.Dot(transform.forward, direction) + 1);
+        var distance = cost * Vector3.Distance(self.transform.position,
           entity.transform.position);
         if (distance < nearestDistance) {
           nearest = entity;
@@ -53,8 +56,9 @@ namespace Effinbox {
       return nearest;
     }
 
-    public void SelectNearestEnemy() {
+    public Entity SelectNearestEnemy() {
       target = GetNearestEnemy();
+      return target;
     }
 
     public void CycleTargets() {

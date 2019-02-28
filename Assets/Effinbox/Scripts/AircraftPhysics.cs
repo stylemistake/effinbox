@@ -53,34 +53,38 @@ namespace Effinbox {
       // UpdateVelocity();
       // UpdateHeading();
 
-      var engineColor = new Color(.23f, .14f, 0f, thrustKnob.value * 1.0f);
-      var engineLeft = transform.Find("Body/EngineLeft").GetComponent<Renderer>();
-      var engineRight = transform.Find("Body/EngineRight").GetComponent<Renderer>();
+      var engineColor = new Color(.23f, .14f, 0f, thrustKnob.value * 4.0f);
+      var engineLeft = transform.Find("Model/EngineLeft").GetComponent<Renderer>();
+      var engineRight = transform.Find("Model/EngineRight").GetComponent<Renderer>();
       engineLeft.material.SetColor("_TintColor", engineColor);
       engineRight.material.SetColor("_TintColor", engineColor);
 
-      var pitchVal = pitchKnob.value * 25;
-      var rollVal = rollKnob.value * 20;
       var yawVal = yawKnob.value * 25;
 
-      transform.Find("Body/ControlSurfaces/Brakes")
+      transform.Find("Model/ControlSurfaces/Brakes")
         .localEulerAngles = new Vector3(-90 + brakesKnob.value * 80, 0, 180);
-      transform.Find("Body/ControlSurfaces/AileronLeft")
-        .localEulerAngles = new Vector3(-90 - rollVal - pitchVal, 0, 176);
-      transform.Find("Body/ControlSurfaces/AileronRight")
-        .localEulerAngles = new Vector3(-90 + rollVal - pitchVal, 0, 184);
-      transform.Find("Body/ControlSurfaces/ElevatorLeft")
-        .localEulerAngles = new Vector3(-90 - rollVal - pitchVal, 0, 176);
-      transform.Find("Body/ControlSurfaces/ElevatorRight")
-        .localEulerAngles = new Vector3(-90 + rollVal - pitchVal, 0, 184);
-      transform.Find("Body/ControlSurfaces/CanardLeft")
-        .localEulerAngles = new Vector3(-90 + pitchVal, 0, 180);
-      transform.Find("Body/ControlSurfaces/CanardRight")
-        .localEulerAngles = new Vector3(-90 + pitchVal, 0, 180);
-      transform.Find("Body/ControlSurfaces/Rudder/RudderMesh")
+      transform.Find("Model/ControlSurfaces/AileronLeft")
+        .GetComponent<RotatableSurface>()
+        .Rotate(- 0.5f * pitchKnob.value - 0.5f * rollKnob.value);
+      transform.Find("Model/ControlSurfaces/AileronRight")
+        .GetComponent<RotatableSurface>()
+        .Rotate(- 0.5f * pitchKnob.value + 0.5f * rollKnob.value);
+      transform.Find("Model/ControlSurfaces/ElevatorLeft")
+        .GetComponent<RotatableSurface>()
+        .Rotate(- 0.75f * pitchKnob.value - 0.4f * rollKnob.value);
+      transform.Find("Model/ControlSurfaces/ElevatorRight")
+        .GetComponent<RotatableSurface>()
+        .Rotate(- 0.75f * pitchKnob.value + 0.4f * rollKnob.value);
+      transform.Find("Model/ControlSurfaces/CanardLeft")
+        .GetComponent<RotatableSurface>()
+        .Rotate(pitchKnob.value + 0.5f * rollKnob.value);
+      transform.Find("Model/ControlSurfaces/CanardRight")
+        .GetComponent<RotatableSurface>()
+        .Rotate(pitchKnob.value - 0.5f * rollKnob.value);
+      transform.Find("Model/ControlSurfaces/Rudder/RudderMesh")
         .localEulerAngles = new Vector3(-60, - yawVal, -180);
 
-      transform.Find("Body").localEulerAngles = new Vector3(
+      transform.Find("Model").localEulerAngles = new Vector3(
           pitchKnob.value * 4, yawKnob.value * 2, -rollKnob.value * 8);
     }
 
