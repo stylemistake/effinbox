@@ -1,9 +1,14 @@
 # .gitignore
 
+## Editors
 /.vs
 *.csproj
 *.sublime-workspace
-/obj
-/Library
+
+## Project artifacts
 /Build
+/Library
+/Logs
+/Packages
+/obj
 /Temp

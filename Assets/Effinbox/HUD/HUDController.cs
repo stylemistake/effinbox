@@ -30,12 +30,12 @@ namespace Effinbox.HUD {
       // playerAircraft = player.GetComponent<AircraftPhysics>();
       playerRadar = player.GetComponent<Radar>();
       playerHealth = player.GetComponent<Health>();
-      speedText = transform.FindChild("SpeedText").GetComponent<Text>();
-      speedSpinner = transform.FindChild("SpeedSpinner").GetComponent<RectTransform>();
-      pitchTextLeft = transform.FindChild("PitchTextLeft").GetComponent<Text>();
-      pitchTextRight = transform.FindChild("PitchTextRight").GetComponent<Text>();
-      velocityPointer = transform.FindChild("VelocityPointer").GetComponent<RectTransform>();
-      healthText = transform.FindChild("HealthText").GetComponent<Text>();
+      speedText = transform.Find("SpeedText").GetComponent<Text>();
+      speedSpinner = transform.Find("SpeedSpinner").GetComponent<RectTransform>();
+      pitchTextLeft = transform.Find("PitchTextLeft").GetComponent<Text>();
+      pitchTextRight = transform.Find("PitchTextRight").GetComponent<Text>();
+      velocityPointer = transform.Find("VelocityPointer").GetComponent<RectTransform>();
+      healthText = transform.Find("HealthText").GetComponent<Text>();
     }
 
     public float GetPitchDegrees() {

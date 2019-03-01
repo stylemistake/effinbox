@@ -31,12 +31,12 @@ namespace Effinbox.HUD {
 
     private void Start() {
       rectTransform = GetComponent<RectTransform>();
-      nameText = transform.FindChild("Name").GetComponent<Text>();
-      distanceText = transform.FindChild("Distance").GetComponent<Text>();
-      descriptionText = transform.FindChild("Description").GetComponent<Text>();
-      rectSelectable = transform.FindChild("RectSelectable").GetComponent<Line>();
-      rectSelected = transform.FindChild("RectSelected").GetComponent<Line>();
-      rectLocked = transform.FindChild("RectLocked").GetComponent<Line>();
+      nameText = transform.Find("Name").GetComponent<Text>();
+      distanceText = transform.Find("Distance").GetComponent<Text>();
+      descriptionText = transform.Find("Description").GetComponent<Text>();
+      rectSelectable = transform.Find("RectSelectable").GetComponent<Line>();
+      rectSelected = transform.Find("RectSelected").GetComponent<Line>();
+      rectLocked = transform.Find("RectLocked").GetComponent<Line>();
     }
 
     public void LateUpdate() {
